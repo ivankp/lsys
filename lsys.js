@@ -27,6 +27,7 @@ function clear(x) {
 }
 const round = x => x.toFixed(4).replace(/\.?0*$/,'');
 const last = xs => xs[xs.length-1];
+const rmws = s => s.replace(/\s+/g,'');
 
 document.addEventListener('DOMContentLoaded', () => {
   const defs = _id('defs');
@@ -34,28 +35,41 @@ document.addEventListener('DOMContentLoaded', () => {
   defs.addEventListener('keypress',function(e) {
     if (e.keyCode == 13 && e.shiftKey) {
       e.preventDefault();
-      let start = null;
-      let rules = { };
+      let n = null, start = null, m = null, rules = { }, actions = { };
       for (let line of this.value.split('\n')) {
-        line = line.replace(/\s+/g,'');
+        line = line.trim();
         if (line.length===0) continue;
-        if (start===null) {
-          if (line.length===0 || line.includes(':')) {
-            alert('Invalid start: '+line);
+        if (n===null) {
+          n = parseInt(line);
+          if (isNaN(n) || n<0) {
+            alert('Number of iterations must be a non-negative integer');
             return;
           }
-          start = line;
+        } else if (start===null) {
+          start = rmws(line);
+        } else if ((m = line.match(/(\S)\s*[=→]\s*(.+)/))) {
+          rules[m[1]] = rmws(m[2]);
+        } else if ((m = line.match(/(\S)\s*:\s*(.+)/))) {
+          actions[m[1]] = m[3];
         } else {
-          const rule = line.split(':');
-          if (rule.length!==2 || rule[0].length!==1 || rule[1].length===0) {
-            alert('Invalid rule: '+line);
-            return;
-          }
-          rules[rule[0]] = rule[1];
+          alert('Invalid input: '+line);
+          return;
         }
       }
       if (start!==null) {
         console.log({start,rules});
+        let s = start, s2 = '';
+        for (let i=0; i<n; ++i) {
+          for (const c of s) {
+            const r = rules[c];
+            s2 += (r!==undefined ? r : c);
+          }
+          s = s2;
+          s2 = '';
+        }
+        console.log(`Length: ${s.length}`);
+        if (s.length < 200) console.log(s);
+
         const svg = make(clear(_id('fig')),'svg');
       }
     }
