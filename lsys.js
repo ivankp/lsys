@@ -1,5 +1,5 @@
 const _id = id => document.getElementById(id);
-function make(p,...args) {
+function el(p,...args) {
   if (p===null) {
     const x = args[0];
     if (x.constructor !== String) throw new Error('expected tag name');
@@ -16,7 +16,11 @@ function make(p,...args) {
       p.classList.add(...x);
     } else if (x.constructor === Object) {
       for (const [key,val] of Object.entries(x))
-        p.style[key] = val;
+        // p.style[key] = val;
+        if (p instanceof SVGElement)
+          p.setAttributeNS(null,key,val);
+        else
+          p.setAttribute(key,val);
     }
   }
   return p;
@@ -58,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (start!==null) {
         console.log({start,rules});
+        // apply rules and iterate
         let s = start, s2 = '';
         for (let i=0; i<n; ++i) {
           for (const c of s) {
@@ -70,7 +75,38 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Length: ${s.length}`);
         if (s.length < 200) console.log(s);
 
-        const svg = make(clear(_id('fig')),'svg');
+        // draw
+        let x=0, y=0, a=0, d = 'M0,0';
+        let xmin=0, xmax=0, ymin=0, ymax=0;
+        const stack = [ ];
+        for (const c of s) {
+          if (c==='F') {
+            const ad = a*Math.PI/180;
+            x += Math.cos(ad);
+            y += Math.sin(ad);
+            if (x < xmin) xmin = x;
+            if (x > xmax) xmax = x;
+            if (y < ymin) ymin = y;
+            if (y > ymax) ymax = y;
+            d += ` ${round(x)},${round(y)}`;
+          } else if (c==='+') {
+            a += 90;
+          } else if (c==='-') {
+            a -= 90;
+          }
+        }
+        const w = Math.max(xmax-xmin,ymax-ymin)/500;
+        el(clear(_id('fig')),'svg',{
+          'viewBox': `${round(xmin)} ${round(ymin-w/2)} ` +
+                     `${round(xmax-xmin)} ${round(ymax-ymin+w)}`,
+          'width': '100%',
+          'height': '100%'
+        },'path',{
+          d,
+          'stroke': '#000',
+          'stroke-width': w,
+          'fill': 'none'
+        });
       }
     }
   });
