@@ -3,3 +3,7 @@ div { margin: 0; border: 0; padding: 0; }
 
 a { text-decoration: none; }
 a:hover { text-decoration: underline; }
+
+div.top > * {
+  vertical-align: top;
+}
