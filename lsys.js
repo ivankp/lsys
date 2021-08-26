@@ -35,6 +35,13 @@ let px, py, ang, svg, path;
 let xmin, xmax, ymin, ymax;
 const stack = [ ];
 
+function end_path(start=true) {
+  if ((path.match(/,/g) || []).length>1)
+    el(svg,'path',{ 'd': path });
+  if (start)
+    path = `M${round(px)},${round(py)}`;
+}
+
 const action_functions = {
   'move': (args) => {
     const d = args.length===0 ? 1 : parseFloat(args);
@@ -62,20 +69,24 @@ const action_functions = {
   'pop': (args) => {
     if (args.length!==0) throw new Error('pop');
     return () => {
-      if ((path.match(/,/g) || []).length>1)
-        el(svg,'path',{ 'd': path });
       [px,py,ang] = stack.pop();
-      path = `M${round(px)},${round(py)}`;
+      end_path();
     };
   },
   'style': (args) => {
     return () => {
+      end_path();
       svg = el(svg,'g',{ 'style': args });
     };
   },
   '/style': (args) => {
     return () => {
-      svg = svg.parentElement;
+      end_path();
+      const g = svg;
+      if (g.tagName!=='g') throw new Error('no style to close');
+      svg = g.parentElement;
+      if (g.childElementCount===0)
+        g.remove();
     };
   },
 };
@@ -145,8 +156,7 @@ function draw() {
                  `${round(xmax-xmin)} ${round(ymax-ymin+w)}`,
       'stroke-width': w,
     });
-    if ((path.match(/,/g) || []).length>1)
-      el(svg,'path',{ 'd': path });
+    end_path(false);
   }
 }
 
