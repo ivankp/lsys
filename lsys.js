@@ -62,9 +62,20 @@ const action_functions = {
   'pop': (args) => {
     if (args.length!==0) throw new Error('pop');
     return () => {
-      el(svg,'path',{ 'd': path });
+      if ((path.match(/,/g) || []).length>1)
+        el(svg,'path',{ 'd': path });
       [px,py,ang] = stack.pop();
       path = `M${round(px)},${round(py)}`;
+    };
+  },
+  'style': (args) => {
+    return () => {
+      svg = el(svg,'g',{ 'style': args });
+    };
+  },
+  '/style': (args) => {
+    return () => {
+      svg = svg.parentElement;
     };
   },
 };
@@ -133,9 +144,9 @@ function draw() {
       'viewBox': `${round(xmin)} ${round(ymin-w/2)} ` +
                  `${round(xmax-xmin)} ${round(ymax-ymin+w)}`,
       'stroke-width': w,
-    },'path',{
-      'd': path
     });
+    if ((path.match(/,/g) || []).length>1)
+      el(svg,'path',{ 'd': path });
   }
 }
 
